@@ -16,34 +16,39 @@ using std::complex;
 using namespace seal;
 
 namespace troytest {
-    
+
     class Timer {
     public:
         std::vector<timeval> times;
         std::vector<double> accumulated; // ms
         std::vector<std::string> names;
+
         Timer() {}
+
         long registerTimer(std::string name = "") {
-            times.push_back(timeval()); 
+            times.push_back(timeval());
             accumulated.push_back(0);
             int ret = times.size() - 1;
             names.push_back(name);
             return ret;
         }
+
         void tick(long i = 0) {
             if (times.size() < 1) registerTimer();
             assert(i < times.size());
             gettimeofday(&times[i], 0);
         }
+
         double tock(long i = 0) {
             assert(i < times.size());
-            timeval s; gettimeofday(&s, 0);
+            timeval s;
+            gettimeofday(&s, 0);
             auto timeElapsed = (s.tv_sec - times[i].tv_sec) * 1000.0;
             timeElapsed += (s.tv_usec - times[i].tv_usec) / 1000.0;
             accumulated[i] += timeElapsed;
             return accumulated[i];
         }
-        
+
         void clear() {
             times.clear();
             accumulated.clear();
@@ -52,7 +57,7 @@ namespace troytest {
 
         std::map<std::string, double> gather(double divisor = 1) {
             std::map<std::string, double> p;
-            for (long i=0; i<times.size(); i++) {
+            for (long i = 0; i < times.size(); i++) {
                 p[names[i]] = accumulated[i] / divisor;
             }
             clear();
@@ -61,17 +66,17 @@ namespace troytest {
     };
 
     class TimeTest {
-        
+
     protected:
         Timer tim;
-        Encryptor* encryptor;
-        Decryptor* decryptor;
-        Evaluator* evaluator;
-        SEALContext* context;
+        Encryptor *encryptor;
+        Decryptor *decryptor;
+        Evaluator *evaluator;
+        SEALContext *context;
         RelinKeys rlk;
         PublicKey pk;
         GaloisKeys gk;
-        KeyGenerator* keygen;
+        KeyGenerator *keygen;
 
     public:
         TimeTest() {
@@ -91,6 +96,7 @@ namespace troytest {
         }
 
         virtual Plaintext randomPlaintext() = 0;
+
         virtual Ciphertext randomCiphertext() = 0;
         // virtual void testEncode() = 0;
 
@@ -112,10 +118,10 @@ namespace troytest {
         }
 
         void printTimer(std::map<std::string, double> r) {
-            for (auto& p: r) {
+            for (auto &p: r) {
                 std::cout << std::setw(25) << std::right << p.first << ":";
                 std::cout << std::setw(10) << std::right << std::fixed << std::setprecision(3)
-                    << p.second << std::endl;
+                          << p.second << std::endl;
             }
         }
 
@@ -190,16 +196,17 @@ namespace troytest {
 
     };
 
-    class TimeTestCKKS: public TimeTest {
+    class TimeTestCKKS : public TimeTest {
 
-        CKKSEncoder* encoder;
+        CKKSEncoder *encoder;
         size_t slotCount;
         int dataBound;
         double delta;
-    
+
     public:
 
-        TimeTestCKKS(size_t polyModulusDegree, vector<int> qs, int dataBound = 1<<6, double delta=static_cast<double>(1<<16)) {
+        TimeTestCKKS(size_t polyModulusDegree, vector<int> qs, int dataBound = 1 << 6,
+                     double delta = static_cast<double>(1 << 16)) {
             slotCount = polyModulusDegree / 2;
             this->dataBound = dataBound;
             this->delta = delta;
@@ -220,11 +227,10 @@ namespace troytest {
         ~TimeTestCKKS() {
             if (encoder) delete encoder;
         }
-        
+
         static vector<complex<double>> randomVector(size_t count, int data_bound) {
             vector<complex<double>> input(count, 0.0);
-            for (size_t i = 0; i < count; i++)
-            {
+            for (size_t i = 0; i < count; i++) {
                 input[i] = static_cast<double>(rand() % data_bound);
             }
             return input;
@@ -232,13 +238,15 @@ namespace troytest {
 
         Plaintext randomPlaintext() override {
             auto p = randomVector(slotCount, dataBound);
-            Plaintext ret; encoder->encode(p, delta, ret);
+            Plaintext ret;
+            encoder->encode(p, delta, ret);
             return std::move(ret);
         }
 
         Ciphertext randomCiphertext() override {
             auto r = randomPlaintext();
-            Ciphertext ret; encryptor->encrypt(r, ret);
+            Ciphertext ret;
+            encryptor->encrypt(r, ret);
             return std::move(ret);
         }
 
@@ -315,16 +323,17 @@ namespace troytest {
 
     };
 
-    class TimeTestBFVBGV: public TimeTest {
+    class TimeTestBFVBGV : public TimeTest {
 
-        BatchEncoder* encoder;
+        BatchEncoder *encoder;
         size_t slotCount;
         int dataBound;
         double delta;
-    
+
     public:
 
-        TimeTestBFVBGV(bool bgv, size_t polyModulusDegree, uint64_t plainModulusBitSize, vector<int> qs, int dataBound = 1<<6) {
+        TimeTestBFVBGV(bool bgv, size_t polyModulusDegree, uint64_t plainModulusBitSize, vector<int> qs,
+                       int dataBound = 1 << 6) {
             slotCount = polyModulusDegree / 2;
             this->dataBound = dataBound;
             this->delta = delta;
@@ -347,11 +356,10 @@ namespace troytest {
         ~TimeTestBFVBGV() {
             if (encoder) delete encoder;
         }
-        
+
         static vector<int64_t> randomVector(size_t count, int data_bound) {
             vector<int64_t> input(count, 0.0);
-            for (size_t i = 0; i < count; i++)
-            {
+            for (size_t i = 0; i < count; i++) {
                 input[i] = rand() % data_bound;
             }
             return input;
@@ -359,13 +367,15 @@ namespace troytest {
 
         Plaintext randomPlaintext() override {
             auto p = randomVector(slotCount, dataBound);
-            Plaintext ret; encoder->encode(p, ret);
+            Plaintext ret;
+            encoder->encode(p, ret);
             return std::move(ret);
         }
 
         Ciphertext randomCiphertext() override {
             auto r = randomPlaintext();
-            Ciphertext ret; encryptor->encrypt(r, ret);
+            Ciphertext ret;
+            encryptor->encrypt(r, ret);
             return std::move(ret);
         }
 
@@ -446,16 +456,16 @@ namespace troytest {
 }
 
 int main() {
-    // std::cout << "----- CKKS -----\n";
-    // troytest::TimeTestCKKS test(16384, {60, 40, 40, 40, 40, 60});
-    // test.testAll();
+    std::cout << "----- CKKS -----\n";
+    troytest::TimeTestCKKS test(16384, {60, 40, 40, 40, 40, 60});
+    test.testAll();
 
     std::cout << "----- BFV -----\n";
     troytest::TimeTestBFVBGV test2(false, 16384, 59, {60, 40, 40, 40, 40, 60});
     test2.testAll();
 
-    // std::cout << "----- BGV -----\n";
-    // troytest::TimeTestBFVBGV test3(true, 16384, 20, {60, 40, 40, 40, 40, 60});
-    // test3.testAll();
+    std::cout << "----- BGV -----\n";
+    troytest::TimeTestBFVBGV test3(true, 16384, 20, {60, 40, 40, 40, 40, 60});
+    test3.testAll();
     return 0;
 }

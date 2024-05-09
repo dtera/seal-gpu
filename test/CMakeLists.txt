@@ -41,7 +41,9 @@ target_sources(linear PRIVATE app/linear.cu)
 target_link_libraries(linear troy)
 
 if(TROY_COMPARE_SEAL)
-    find_package(SEAL 4.0 REQUIRED PATHS extern/SEAL/build/install/lib/cmake/SEAL-4.0)
+    set(SEAL_FOUND ON)
+    find_package(SEAL 4.0 REQUIRED PATHS ../extern/SEAL/build/install/lib/cmake/SEAL-4.0
+            ../extern/SEAL/build/install/lib64/cmake/SEAL-4.0)
 
     add_executable(timetest_seal)
     target_sources(timetest_seal PRIVATE timetest_seal.cpp)
